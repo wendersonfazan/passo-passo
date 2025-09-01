@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('eventos')->group(function () {
         Route::get('', [EventController::class, 'eventos'])->name('eventos.index');
         Route::post('criar', [EventController::class, 'criar'])->name('eventos.criar');
+        Route::post('registrar', [EventController::class, 'registrar'])->name('eventos.registrar');
         Route::get('listar', [EventController::class, 'listar'])->name('eventos.listar');
         Route::put('editar/{id}', [EventController::class, 'editar'])->name('eventos.editar');
         Route::delete('cancelar/{id}', [EventController::class, 'cancelar'])->name('eventos.cancelar');

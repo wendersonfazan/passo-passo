@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('nome', 100);
             $table->dateTime('data');
-            $table->string('descricao', 300);
             $table->float('duracao');
             $table->smallInteger('status')->default(1);
             $table->timestamps();

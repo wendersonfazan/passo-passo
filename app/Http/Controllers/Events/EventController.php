@@ -4,9 +4,15 @@ namespace App\Http\Controllers\Events;
 
 use App\Enums\Evento\StatusEventoEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Eventos\CriarEventoRequest;
+use App\Http\Requests\Eventos\EditarEventoRequest;
+use App\Http\Requests\Eventos\RegistrarEventoRequest;
 use App\Models\Agenda;
 use App\Models\Evento;
+use App\Repositories\EventoRepository;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Redirect;
@@ -14,120 +20,93 @@ use Illuminate\Support\Facades\Redirect;
 class EventController extends Controller
 {
 
-    public function criar(Request $request)
+    public function __construct(
+        private readonly EventoRepository $eventoRepository
+    )
     {
-        try {
-            $data = $request->all();
 
-            $evento = Evento::query()
-                ->where('nome', Arr::get($data, 'nome'))
-                ->where('data', Arr::get($data, 'data'))
-                ->exists();
-
-            if ($evento) {
-                return Redirect::route('eventos.index')->with('error', 'Evento já existe');
-            }
-
-
-            Evento::query()->create([
-                'nome' => Arr::get($data, 'nome'),
-                'data' => Arr::get($data, 'data'),
-                'duracao' => Arr::get($data, 'duracao'),
-                'status' => StatusEventoEnum::ATIVO->value
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao criar evento: ' . $e->getMessage()
-            ], 500);
-        }
-
-        return Redirect::route('eventos.index');
     }
 
-    public function editar(int $id, Request $request)
+    public function criar(CriarEventoRequest $request): RedirectResponse
     {
         try {
-            $data = $request->all();
+            $data = $request->validated();
+            $data['data'] = Carbon::parse($data['data'])->format('Y-m-d H:i');
 
-            $evento = Evento::query()
-                ->where('id', $id)
-                ->first();
-
-            if (!$evento) {
-                return response()->json([
-                    'message' => 'Evento não encontrado'
-                ], 404);
-            }
-
-            $evento->update([
-                'nome' => Arr::get($data, 'nome', $evento->nome),
-                'data' => Arr::get($data, 'data', $evento->data),
-                'descricao' => Arr::get($data, 'descricao', $evento->descricao),
-                'duracao' => Arr::get($data, 'duracao', $evento->duracao),
-            ]);
+            $this->eventoRepository->create($data);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao editar evento: ' . $e->getMessage()
-            ], 500);
+            return Redirect::route('eventos.index')->withErrors([
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        return Redirect::route('eventos.index')->with(['message' => 'Evento criado com sucesso']);
+
+    }
+
+    public function registrar(RegistrarEventoRequest $request): RedirectResponse
+    {
+        try {
+            $data = $request->validated();
+
+            $this->eventoRepository->registrar($data['evento_id'], auth()->id());
+        } catch (\Exception $e) {
+            return Redirect::route('eventos.index')->withErrors([
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        return Redirect::route('eventos.index')->with(['message' => 'Registrado com sucesso no evento']);
+
+    }
+
+    public function editar(EditarEventoRequest $request): RedirectResponse
+    {
+        try {
+            $data = $request->validated();
+
+            $evento = $this->eventoRepository->getById($data['evento_id']);
+            $this->eventoRepository->update($evento, $data);
+        } catch (\Exception $e) {
+            return Redirect::route('eventos.index')->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
 
 
-        return response()->json([
-            'message' => 'Evento atualizado com sucesso',
-            'evento' => $evento
-        ]);
+        return Redirect::route('eventos.index')->with(['message' => 'Evento editado com sucesso']);
+
     }
 
     public function cancelar(int $id)
     {
         try {
-            $evento = Evento::query()
-                ->where('id', $id)
-                ->first();
+            $evento = $this->eventoRepository->getById($id);
 
-            if (!$evento) {
-                return response()->json([
-                    'message' => 'Evento não encontrado'
-                ], 404);
-            }
-
-            $evento->update([
+            $this->eventoRepository->update($evento, [
                 'status' => StatusEventoEnum::CANCELADO->value
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao cancelar evento: ' . $e->getMessage()
-            ], 500);
+            return Redirect::route('eventos.index')->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
 
-        return response()->json([
-            'message' => 'Evento cancelado com sucesso',
-            'evento' => $evento
-        ]);
+        return Redirect::route('eventos.index')->with(['message' => 'Evento Cancelado com sucesso']);
     }
 
-    public function eventos()
+    public function eventos(Request $request)
     {
         try {
             $userId = auth()->id();
-            $eventos = Evento::with('agendas')->get()->map(function ($evento) use ($userId) {
-                return [
-                    'id' => $evento->id,
-                    'title' => $evento->nome,
-                    'start' => $evento->data,
-                    // verifica se o usuário participa
-                    'backgroundColor' => $evento->agendas->contains('user_id', $userId) ? '#198754' : '#0d6efd',
-                    'borderColor' => $evento->agendas->contains('user_id', $userId) ? '#14532d' : '#0d6efd',
-                ];
-            });
+            $eventos = $this->eventoRepository->listByUser($userId);
 
-
-        }catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao listar meus eventos: ' . $e->getMessage()
-            ], 500);
+        } catch (\Exception $e) {
+            return Redirect::route('eventos.index')->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
+
         return view('eventos.index', compact('eventos'));
     }
 

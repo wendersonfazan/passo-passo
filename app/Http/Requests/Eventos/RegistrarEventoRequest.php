@@ -4,7 +4,7 @@ namespace App\Http\Requests\Eventos;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CriarEventoRequest extends FormRequest
+class RegistrarEventoRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,9 +14,7 @@ class CriarEventoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nome' => ['required', 'string', 'max:100'],
-            'data' => ['required', 'string'],
-            'duracao' => ['required', 'numeric', 'min:1']
+            'evento_id' => ['required', 'numeric']
         ];
     }
 
