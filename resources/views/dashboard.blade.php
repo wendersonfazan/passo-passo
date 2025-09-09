@@ -40,7 +40,7 @@
 
                     {{-- Imagem + Texto --}}
                     <div class="w-full md:w-2/3">
-                        <img src="/images/grupo-corrida.jpg" alt="Grupo de corrida"
+                        <img src="{{asset('assets/stab.jpg')}}" alt="Grupo de corrida"
                              class="rounded-lg mb-4 shadow"/>
                         <p class="text-gray-700 leading-relaxed">
                             Em cidades como Santo André, o projeto tem ganhado força, oferecendo aos moradores a
