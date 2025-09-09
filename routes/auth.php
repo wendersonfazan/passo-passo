@@ -11,7 +11,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Events\EventController;
-
+use App\Http\Controllers\UsersController;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -67,6 +67,13 @@ Route::middleware('auth')->group(function () {
         Route::get('listar', [EventController::class, 'listar'])->name('eventos.listar');
         Route::put('editar/{id}', [EventController::class, 'editar'])->name('eventos.editar');
         Route::delete('cancelar/{id}', [EventController::class, 'cancelar'])->name('eventos.cancelar');
+    });
+
+
+    Route::prefix('usuarios')->group(function () {
+        Route::get('', [UsersController::class, 'usuarios'])->name('usuarios.index');
+        Route::delete('deletar/{id}', [UsersController::class, 'deletar'])->name('usuarios.deletar');
+        Route::post('set-admin/{id}', [UsersController::class, 'setAdmin'])->name('usuarios.setar-admin');
     });
 
 });

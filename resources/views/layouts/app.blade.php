@@ -32,5 +32,8 @@
                 {{ $slot }}
             </main>
         </div>
+        <p class="text-center text-xs text-gray-500 mt-6">
+            © PASSO A PASSO 2025
+        </p>
     </body>
 </html>

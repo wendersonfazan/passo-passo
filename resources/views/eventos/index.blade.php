@@ -111,8 +111,10 @@
                 },
                 events: @json($eventos),
                 dateClick: function (info) {
-                    window.dispatchEvent(new CustomEvent('open-modal', {detail: 'create-event'}));
-                    document.getElementById('data').value = info.dateStr + 'T00:00';
+                    @if(auth()->user() && auth()->user()->is_admin)
+                        window.dispatchEvent(new CustomEvent('open-modal', {detail: 'create-event'}));
+                        document.getElementById('data').value = info.dateStr + 'T00:00';
+                    @endif
                 },
                 eventClick: function (info) {
                     info.jsEvent.preventDefault();
